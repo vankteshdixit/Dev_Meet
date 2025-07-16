@@ -1,0 +1,19 @@
+{
+  "name": "devmeet",
+  "version": "1.0.0",
+  "description": "Tinder for devs",
+  "keywords": [
+    "nodejs",
+    "javascript"
+  ],
+  "license": "ISC",
+  "author": "Vanktesh Dixit",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
