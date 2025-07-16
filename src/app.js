@@ -4,14 +4,24 @@ const express = require('express');
 
 const app = express();
 
-app.use("/",(req, res)=>{
-    res.send("Hello from home page");
+// this will only handle GET call from /user
+app.get("/user",(req, res) => {
+    res.send({
+        firstName:"Vanktesh",
+        lastName: "Dixit"
+    })
 });
 
-app.use("/hello",(req, res) => {
-    res.send("Hello");
+// saving data to database
+app.post("/user", (req, res)=>{
+    res.send("Data successfully saved to database")
+});
+
+app.delete("/user", (req, res)=>{
+    res.send("Deleted successfully");
 })
 
+// this will match all the http method to /test
 app.use("/test",(req, res)=> {
     res.send("Hello from the server!");
 })
