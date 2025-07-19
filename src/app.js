@@ -1,31 +1,32 @@
 // starting point of a project
 
 const express = require('express');
-
+const { connectDB } = require('./config/database.js');
 const app = express();
+const User = require('./models/user.js');
 
-// this will only handle GET call from /user
-app.get("/user",(req, res) => {
-    res.send({
-        firstName:"Vanktesh",
-        lastName: "Dixit"
+app.post("/signup",async(req, res)=>{
+    // creating a new instance if a new user model
+    const user = new User({
+        firstName: "Vanktesh",
+        lastName: "Dixit",
+        emailId: "dixitvanktesh2003@gmail.com",
+        password: "12345678",
+    });
+
+    try {
+        await user.save();
+        res.send("User added successfully!");
+    } catch (error) {
+        res.status(400).send("Error saving in the user" + error.message);
+    }
+});
+
+connectDB().then(()=>{
+    console.log("DataBase connected successfully");
+    app.listen(3000, ()=>{
+        console.log("Server is successfully listining on port 3000");
     })
-});
-
-// saving data to database
-app.post("/user", (req, res)=>{
-    res.send("Data successfully saved to database")
-});
-
-app.delete("/user", (req, res)=>{
-    res.send("Deleted successfully");
-})
-
-// this will match all the http method to /test
-app.use("/test",(req, res)=> {
-    res.send("Hello from the server!");
-})
-
-app.listen(3000, ()=>{
-    console.log("Server is sucessfully listining on PORT 3000....");
+}).catch(err => {
+    console.error("Database can't connected");
 });
