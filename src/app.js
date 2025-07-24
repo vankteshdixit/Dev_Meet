@@ -6,8 +6,12 @@ const app = express();
 const User = require('./models/user.js');
 const {validateSignUpData} =require("./utils/validation.js");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth.js");
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup",async(req, res)=>{
     
@@ -38,78 +42,53 @@ app.post("/signup",async(req, res)=>{
     }
 });
 
-
-
-// GET user by email
-app.get("/user",async(req,res)=>{
-    const userEmail = req.body.emailId;
+// create a "/login" api 
+app.post("/login", async(req,res) => {
     try {
-        const users = await User.find({emailId: userEmail});
-        if(users.length === 0){
-            res.status(404).send("User not found");
-        }else{
-            res.send(users);
+        const {emailId, password} = req.body;
+        
+        const user = await User.findOne({emailId: emailId});
+        if(!user){
+            throw new Error("Invalid credentials");
         }
+
+        const isPasswordValid = await user.validatePassword(password);
+
+        if(isPasswordValid){
+
+            // create a JWT token
+            // we are hiding the user {id} inside the JWT token by the help of the below line
+            // const token = await jwt.sign({_id: user._id},"secret key that only server knows")
+            // Add the token to cookie and send the response back to the user
+            const token = await user.getJWT();
+            res.cookie("token", token);
+            res.send("Login Successful!!");
+        }
+        else{
+            throw new Error("Invalid credentials");
+        }
+
     } catch (error) {
-        res.status(400).send("Something went wrong");
+        res.status(400).send("Error: "+ error.message);
     }
 });
 
-// Feed API - GET /feed -get all the users from the database
-app.get("/feed", async(req, res)=>{
+app.get("/profile", userAuth, async(req, res)=>{
     try {
-        const users = await User.find({});
-        res.send(users);
+        const user = req.user;
+        res.send(user);
+
     } catch (error) {
-        res.status(400).send("Something went wrong");
+        res.status(400).send("Error: " +error.message);
     }
 });
 
-// delete the user from the database
-app.delete("/user", async(req, res)=>{
-    const userId = req.body.userId;
-    try {
-        // const user = await User.findByIdAndDelete({_id: userId});
-        // or
-        const user = await User.findByIdAndDelete(userId);
-        res.send("User deleted successfully");
-    } catch (error) {
-        res.status(400).send("Something went wrong");
-    }
-});
+app.post("/sendConnectionRequest", userAuth, async (req, res)=>{
+    // Sending a connection request
+    const user = req.user;
+    console.log("Sending a connection request");
 
-// Update the user 
-app.patch("/user/:userId", async(req,res)=>{
-    const userId = req.params?.userId;
-    const data = req.body;
-// this is to allow the updates on some fields with the help of API validations
-    try {
-        const ALLOWED_UPDATES = [
-        "photoUrl",
-        "about",
-        "skills",
-        "password",
-        "gender",
-    ]
-        const isUpdateAllowed = Object.keys(data).every(k => 
-            ALLOWED_UPDATES.includes(k)
-        );
-        if(!isUpdateAllowed){
-            throw new Error("Update not allowed");
-        }
-        if(data?.skills.length >= 10){
-            throw new Error("Skills can't be more than 10")
-        }
-
-        const user = await User.findByIdAndUpdate({_id: userId}, data,{
-            returnDocument:"after",
-            runValidators: true,
-        });
-        console.log(user);
-        res.send("User updated successfully");
-    } catch (error) {
-        res.status(400).send("Update failed: " + error.message);
-    }
+    res.send(user.firstName + " Sent the connection request");
 })
 
 connectDB().then(()=>{
