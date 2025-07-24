@@ -4,20 +4,42 @@ const express = require('express');
 const { connectDB } = require('./config/database.js');
 const app = express();
 const User = require('./models/user.js');
+const {validateSignUpData} =require("./utils/validation.js");
+const bcrypt = require("bcrypt");
 
 app.use(express.json());
 
 app.post("/signup",async(req, res)=>{
+    
     // creating a new instance if a new user model
-    const user = new User(req.body);
-
+    
     try {
+        // Validation of data
+        // create a helper function in a folder UTILS
+
+        validateSignUpData(req);
+
+        const {firstName, lastName, emailId, password} = req.body;
+        // Encrypt the password
+        // Bcrypt
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: passwordHash,
+        });
+
         await user.save();
         res.send("User added successfully!");
     } catch (error) {
-        res.status(400).send("Error saving in the user" + error.message);
+        res.status(400).send("Error " + error.message);
     }
 });
+
+
+
 // GET user by email
 app.get("/user",async(req,res)=>{
     const userEmail = req.body.emailId;
@@ -57,23 +79,26 @@ app.delete("/user", async(req, res)=>{
 });
 
 // Update the user 
-app.patch("/user", async(req,res)=>{
-    const userId = req.body.userId;
+app.patch("/user/:userId", async(req,res)=>{
+    const userId = req.params?.userId;
     const data = req.body;
-
+// this is to allow the updates on some fields with the help of API validations
     try {
         const ALLOWED_UPDATES = [
         "photoUrl",
         "about",
         "skills",
         "password",
-        "userId",
+        "gender",
     ]
         const isUpdateAllowed = Object.keys(data).every(k => 
             ALLOWED_UPDATES.includes(k)
         );
         if(!isUpdateAllowed){
             throw new Error("Update not allowed");
+        }
+        if(data?.skills.length >= 10){
+            throw new Error("Skills can't be more than 10")
         }
 
         const user = await User.findByIdAndUpdate({_id: userId}, data,{
