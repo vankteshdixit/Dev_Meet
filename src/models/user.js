@@ -3,27 +3,30 @@ const mongoose = require("mongoose");
 const userSchema = mongoose.Schema({
     firstName: {
         type: String,
-        required: true
+        required: true,
+        maxLength: 50,
     },
     lastName: {
-        type: String
+        type: String,
+        maxLength: 50,
     },
     emailId: {
         type: String,
         lowercase: true,
         trim: true,
         required: true,
-        unique: true
+        unique: true,
     },
     password: {
         type: String,
-        required: true
+        required: true,
     },
     age: {
         type: Number,
     },
     gender: {
         type: String,
+        // custom validation function
         validate(value){
             if(!["male", "female", "others"].includes(value)){
                 throw new Error("Invalid gender");
@@ -36,7 +39,7 @@ const userSchema = mongoose.Schema({
     },
     about: {
         type: String,
-        default: "Default"
+        default: "User about"
     },
     skills: {
         type: [String]
